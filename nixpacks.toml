@@ -10,7 +10,7 @@ nixPkgs = [
 [phases.install]
 cmds = [
     "composer install --ignore-platform-reqs",
-    "npm install"
+    "mkdir -p /var/log/nginx /var/cache/nginx"
 ]
 
 [phases.build]
