@@ -9,5 +9,11 @@ nixPkgs = [
 
 [phases.install]
 cmds = [
-    "composer install --ignore-platform-reqs"
+    "composer install --ignore-platform-reqs",
+    "npm install"
+]
+
+[phases.build]
+cmds = [
+    "npm run prod"
 ]
