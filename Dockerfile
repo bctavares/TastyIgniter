@@ -39,11 +39,15 @@ COPY . /app
 # Instalar as dependências via Composer
 RUN composer install --no-dev --optimize-autoloader --no-interaction --ignore-platform-reqs
 
+# Garantir que o .env existe (copiando do example se necessário) e gerar a APP_KEY se estiver vazia
+RUN if [ ! -f .env ]; then cp .env.example .env; fi \
+    && php artisan key:generate --force
+
 # Ajustar permissões das pastas de armazenamento e cache do Laravel/TastyIgniter
 RUN chmod -R 775 storage bootstrap/cache public \
     && chown -R www-data:www-data storage bootstrap/cache public
 
-# CORREÇÃO DEFINITIVA DO NGINX: Apontar para /app/public e injetar o try_files para o Laravel
+# CORREÇÃO DO NGINX: Apontar para /app/public e injetar o try_files para o Laravel
 RUN rm -f /etc/nginx/sites-enabled/default \
     && echo 'server {' > /etc/nginx/sites-available/default \
     && echo '    listen 80 default_server;' >> /etc/nginx/sites-available/default \
