@@ -15,5 +15,5 @@ cmds = [
 
 [phases.build]
 cmds = [
-    "npm run prod"
+    "echo 'Skipping frontend build'"
 ]
