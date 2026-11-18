@@ -39,7 +39,7 @@ COPY . /app
 # Instalar as dependências via Composer
 RUN composer install --no-dev --optimize-autoloader --no-interaction --ignore-platform-reqs
 
-# Garantir que o .env existe (copiando do example se necessário) e gerar a APP_KEY se estiver vazia
+# Garantir o arquivo de ambiente e gerar a APP_KEY se não existir
 RUN if [ ! -f .env ]; then cp .env.example .env; fi \
     && php artisan key:generate --force
 
@@ -68,5 +68,5 @@ RUN rm -f /etc/nginx/sites-enabled/default \
 # Expor a porta 80 para tráfego web
 EXPOSE 80
 
-# Iniciar o PHP-FPM e manter o Nginx rodando em primeiro plano
-CMD service php8.4-fpm start && nginx -g "daemon off;"
+# Script de inicialização: limpa caches do Laravel usando as variáveis de ambiente injetadas, sobe o PHP-FPM e o Nginx
+CMD php artisan config:clear && php artisan cache:clear && service php8.4-fpm start && nginx -g "daemon off;"
