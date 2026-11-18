@@ -1,10 +1,10 @@
-# Usar a imagem oficial do Ubuntu como base para garantir estabilidade com o PHP 8.4
+# Usar a imagem oficial do Ubuntu como base para estabilidade com o PHP 8.4
 FROM ubuntu:22.04
 
-# Evitar prompts interativos durante a instalação
+# Evitar prompts interativos durante o build
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Instalar dependências básicas, Nginx, Git e o repositório PPA do PHP 8.4
+# Instalar dependências essenciais, Nginx, Git e o repositório PPA do PHP 8.4
 RUN apt-get update && apt-get install -y \
     software-properties-common \
     curl \
@@ -30,20 +30,20 @@ RUN apt-get update && apt-get install -y \
 # Instalar o Composer globalmente
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Definir o diretório de trabalho dentro do container
+# Definir o diretório de trabalho do container
 WORKDIR /app
 
-# Copiar os arquivos do projeto para dentro do container
+# Copiar todos os arquivos do projeto para dentro do container
 COPY . /app
 
 # Instalar as dependências via Composer (ignorando restrições de plataforma se necessário)
 RUN composer install --no-dev --optimize-autoloader --no-interaction --ignore-platform-reqs
 
-# Ajustar permissões das pastas de storage e cache do Laravel
+# Ajustar permissões das pastas de armazenamento e cache do Laravel/TastyIgniter
 RUN chmod -R 775 storage bootstrap/cache public \
     && chown -R www-data:www-data storage bootstrap/cache public
 
-# Configurar o Nginx para apontar para a pasta public do TastyIgniter
+# Configurar o Nginx para apontar direto para a pasta public e suportar as rotas do framework
 RUN sed -i 's|root /var/www/html;|root /app/public;|g' /etc/nginx/sites-available/default \
     && sed -i 's|index index.html index.htm index.nginx-debian.html;|index index.php index.html index.htm;|g' /etc/nginx/sites-available/default \
     && sed -i 's|try_files \$uri \$uri/ =404;|try_files \$uri \$uri/ /index.php?\$query_string;|g' /etc/nginx/sites-available/default
@@ -54,5 +54,5 @@ RUN sed -i '/location ~ \\.php\$ {/c\    location ~ \\.php\$ {\n        include 
 # Expor a porta 80 para tráfego web
 EXPOSE 80
 
-# Script de inicialização para subir o PHP-FPM e o Nginx simultaneamente
+# Iniciar o PHP-FPM e manter o Nginx rodando em primeiro plano
 CMD service php8.4-fpm start && nginx -g "daemon off;"
