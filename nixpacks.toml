@@ -10,10 +10,13 @@ nixPkgs = [
 [phases.install]
 cmds = [
     "composer install --ignore-platform-reqs",
-    "mkdir -p /var/log/nginx /var/cache/nginx"
+    "npm install"
 ]
 
 [phases.build]
 cmds = [
     "echo 'Skipping frontend build'"
 ]
+
+[start]
+cmd = "php-FPM -D && nginx -g 'daemon off;'"
