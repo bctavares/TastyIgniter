@@ -10,7 +10,8 @@ nixPkgs = [
 [phases.install]
 cmds = [
     "composer install --ignore-platform-reqs",
-    "npm install"
+    "npm install",
+    "mkdir -p /var/log/nginx /var/cache/nginx"
 ]
 
 [phases.build]
@@ -19,4 +20,4 @@ cmds = [
 ]
 
 [start]
-cmd = "php-FPM -D && nginx -g 'daemon off;'"
+cmd = "sed -i 's|root /app;|root /app/public;|g' /assets/nginx.template.conf && node /assets/scripts/prestart.mjs /assets/nginx.template.conf /nginx.conf && (php-fpm -y /assets/php-fpm.conf & nginx -c /nginx.conf)"
