@@ -36,20 +36,30 @@ WORKDIR /app
 # Copiar todos os arquivos do projeto para dentro do container
 COPY . /app
 
-# Instalar as dependências via Composer (ignorando restrições de plataforma se necessário)
+# Instalar as dependências via Composer
 RUN composer install --no-dev --optimize-autoloader --no-interaction --ignore-platform-reqs
 
 # Ajustar permissões das pastas de armazenamento e cache do Laravel/TastyIgniter
 RUN chmod -R 775 storage bootstrap/cache public \
     && chown -R www-data:www-data storage bootstrap/cache public
 
-# Configurar o Nginx para apontar direto para a pasta public e suportar as rotas do framework
-RUN sed -i 's|root /var/www/html;|root /app/public;|g' /etc/nginx/sites-available/default \
-    && sed -i 's|index index.html index.htm index.nginx-debian.html;|index index.php index.html index.htm;|g' /etc/nginx/sites-available/default \
-    && sed -i 's|try_files \$uri \$uri/ =404;|try_files \$uri \$uri/ /index.php?\$query_string;|g' /etc/nginx/sites-available/default
-
-# Habilitar o processamento do PHP 8.4-FPM no Nginx padrão
-RUN sed -i '/location ~ \\.php\$ {/c\    location ~ \\.php\$ {\n        include snippets/fastcgi-php.conf;\n        fastcgi_pass unix:/run/php/php8.4-fpm.sock;\n    }' /etc/nginx/sites-available/default
+# CORREÇÃO DEFINITIVA DO NGINX: Apontar para /app/public e injetar o try_files para o Laravel
+RUN rm -f /etc/nginx/sites-enabled/default \
+    && echo 'server {' > /etc/nginx/sites-available/default \
+    && echo '    listen 80 default_server;' >> /etc/nginx/sites-available/default \
+    && echo '    listen [::]:80 default_server;' >> /etc/nginx/sites-available/default \
+    && echo '    root /app/public;' >> /etc/nginx/sites-available/default \
+    && echo '    index index.php index.html index.htm;' >> /etc/nginx/sites-available/default \
+    && echo '    server_name _;' >> /etc/nginx/sites-available/default \
+    && echo '    location / {' >> /etc/nginx/sites-available/default \
+    && echo '        try_files $uri $uri/ /index.php?$query_string;' >> /etc/nginx/sites-available/default \
+    && echo '    }' >> /etc/nginx/sites-available/default \
+    && echo '    location ~ \\.php$ {' >> /etc/nginx/sites-available/default \
+    && echo '        include snippets/fastcgi-php.conf;' >> /etc/nginx/sites-available/default \
+    && echo '        fastcgi_pass unix:/run/php/php8.4-fpm.sock;' >> /etc/nginx/sites-available/default \
+    && echo '    }' >> /etc/nginx/sites-available/default \
+    && echo '}' >> /etc/nginx/sites-available/default \
+    && ln -s /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default
 
 # Expor a porta 80 para tráfego web
 EXPOSE 80
