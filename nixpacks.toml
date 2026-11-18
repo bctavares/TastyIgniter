@@ -4,5 +4,16 @@ nixPkgs = [
     "php84Packages.composer",
     "nginx",
     "libmysqlclient",
-    "nodejs_20"
+    "nodejs_18"
+]
+
+[phases.install]
+cmds = [
+    "composer install --ignore-platform-reqs",
+    "npm install"
+]
+
+[phases.build]
+cmds = [
+    "npm run prod"
 ]
